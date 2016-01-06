@@ -33,7 +33,7 @@ import java.io.InputStream;
  * Wraps a {@link SubtitleParser}, exposing an interface similar to {@link MediaCodec} for
  * asynchronous parsing of subtitles.
  */
-/* package */ final class SubtitleParserHelper implements Handler.Callback {
+public final class SubtitleParserHelper implements Handler.Callback {
 
   private static final int MSG_FORMAT = 0;
   private static final int MSG_SAMPLE = 1;
