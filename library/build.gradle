@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 apply plugin: 'com.android.library'
-apply plugin: 'bintray-release'
+//apply plugin: 'bintray-release'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.1"
+    buildToolsVersion "23.0.2"
 
     defaultConfig {
         // Important: ExoPlayerLib specifies a minSdkVersion of 9 because
@@ -25,7 +25,7 @@ android {
         // functionality provided by the library requires API level 16 or
         // greater.
         minSdkVersion 9
-        targetSdkVersion 20
+        targetSdkVersion 23
     }
 
     buildTypes {
@@ -71,7 +71,7 @@ android.libraryVariants.all { variant ->
         exclude '**/R.java'
     }
 }
-
+/*
 publish {
     repoName = 'exoplayer'
     userOrg = 'google'
@@ -80,4 +80,4 @@ publish {
     version = 'r1.5.3'
     description = 'The ExoPlayer library.'
     website = 'https://github.com/google/ExoPlayer'
-}
+}*/
