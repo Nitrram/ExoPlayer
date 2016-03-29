@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.google.android.exoplayer.extractor;
 
 /**
@@ -20,9 +21,10 @@ package com.google.android.exoplayer.extractor;
  */
 public final class PositionHolder {
 
-  /**
-   * The held position.
-   */
-  public long position;
+    /**
+     * The held position.
+     */
+    public long position;
 
+    public long readPosition;
 }

@@ -392,6 +392,8 @@ public final class Mp4Extractor implements Extractor, SeekMap {
         sampleCurrentNalBytesRemaining -= writtenBytes;
       }
     }
+
+    positionHolder.readPosition = track.sampleTable.timestampsUs[sampleIndex];
     trackOutput.sampleMetadata(track.sampleTable.timestampsUs[sampleIndex],
         track.sampleTable.flags[sampleIndex], sampleSize, 0, null);
     track.sampleIndex++;

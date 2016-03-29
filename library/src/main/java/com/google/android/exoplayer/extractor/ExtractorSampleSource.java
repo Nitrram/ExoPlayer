@@ -164,7 +164,8 @@ public final class ExtractorSampleSource implements SampleSource, SampleSourceRe
 
   private final ExtractorHolder extractorHolder;
   private final Allocator allocator;
-  private final int requestedBufferSize;
+  private final int requestedBufferTime;
+  //private final int requestedBufferSize;
   private final SparseArray<InternalTrackOutput> sampleQueues;
   private final int minLoadableRetryCount;
   private final Uri uri;
@@ -221,7 +222,7 @@ public final class ExtractorSampleSource implements SampleSource, SampleSourceRe
    * @param uri The {@link Uri} of the media stream.
    * @param dataSource A data source to read the media stream.
    * @param allocator An {@link Allocator} from which to obtain memory allocations.
-   * @param requestedBufferSize The requested total buffer size for storing sample data, in bytes.
+   * @param requestedBufferTime The requested total buffer size for storing sample data, in bytes.
    *     The actual allocated size may exceed the value passed in if the implementation requires it.
    * @param minLoadableRetryCount The minimum number of times that the sample source will retry
    *     if a loading error occurs.
@@ -229,11 +230,12 @@ public final class ExtractorSampleSource implements SampleSource, SampleSourceRe
    *     priority. If omitted, the default extractors will be used.
    */
   public ExtractorSampleSource(Uri uri, DataSource dataSource, Allocator allocator,
-      int requestedBufferSize, int minLoadableRetryCount, Extractor... extractors) {
+      int requestedBufferTime, int minLoadableRetryCount, Extractor... extractors) {
     this.uri = uri;
     this.dataSource = dataSource;
     this.allocator = allocator;
-    this.requestedBufferSize = requestedBufferSize;
+    this.requestedBufferTime = requestedBufferTime;
+
     this.minLoadableRetryCount = minLoadableRetryCount;
     if (extractors == null || extractors.length == 0) {
       extractors = new Extractor[DEFAULT_EXTRACTOR_CLASSES.size()];
@@ -607,12 +609,12 @@ public final class ExtractorSampleSource implements SampleSource, SampleSourceRe
   }
 
   private ExtractingLoadable createLoadableFromStart() {
-    return new ExtractingLoadable(uri, dataSource, extractorHolder, allocator, requestedBufferSize,
+    return new ExtractingLoadable(uri, dataSource, extractorHolder, allocator, requestedBufferTime,
         0);
   }
 
   private ExtractingLoadable createLoadableFromPositionUs(long positionUs) {
-    return new ExtractingLoadable(uri, dataSource, extractorHolder, allocator, requestedBufferSize,
+    return new ExtractingLoadable(uri, dataSource, extractorHolder, allocator, requestedBufferTime,
         seekMap.getPosition(positionUs));
   }
 
@@ -681,7 +683,7 @@ public final class ExtractorSampleSource implements SampleSource, SampleSourceRe
     private final DataSource dataSource;
     private final ExtractorHolder extractorHolder;
     private final Allocator allocator;
-    private final int requestedBufferSize;
+    private final int requestedBufferTime;
     private final PositionHolder positionHolder;
 
     private volatile boolean loadCanceled;
@@ -689,12 +691,12 @@ public final class ExtractorSampleSource implements SampleSource, SampleSourceRe
     private boolean pendingExtractorSeek;
 
     public ExtractingLoadable(Uri uri, DataSource dataSource, ExtractorHolder extractorHolder,
-        Allocator allocator, int requestedBufferSize, long position) {
+        Allocator allocator, int requestedBufferTime, long position) {
       this.uri = Assertions.checkNotNull(uri);
       this.dataSource = Assertions.checkNotNull(dataSource);
       this.extractorHolder = Assertions.checkNotNull(extractorHolder);
       this.allocator = Assertions.checkNotNull(allocator);
-      this.requestedBufferSize = requestedBufferSize;
+      this.requestedBufferTime = requestedBufferTime;
       positionHolder = new PositionHolder();
       positionHolder.position = position;
       pendingExtractorSeek = true;
@@ -728,9 +730,15 @@ public final class ExtractorSampleSource implements SampleSource, SampleSourceRe
             pendingExtractorSeek = false;
           }
           while (result == Extractor.RESULT_CONTINUE && !loadCanceled) {
-            allocator.blockWhileTotalBytesAllocatedExceeds(requestedBufferSize);
-            result = extractor.read(input, positionHolder);
-            // TODO: Implement throttling to stop us from buffering data too often.
+              //allocator.blockWhileTotalBytesAllocatedExceeds(requestedBufferSize);
+              result = extractor.read(input, positionHolder);
+              // TODO: Implement throttling to stop us from buffering data too often.
+
+              // Limit loader from buffering data too often. Sleep when the threshold is reached
+              // 1/10 of the time it outreaches it.
+              if ((positionHolder.readPosition - position) > this.requestedBufferTime) {
+                  Thread.sleep((positionHolder.readPosition - position - requestedBufferTime) / 10);
+              }
           }
         } finally {
           if (result == Extractor.RESULT_SEEK) {
