@@ -15,6 +15,10 @@
  */
 package com.google.android.exoplayer.extractor;
 
+import android.net.Uri;
+import android.os.SystemClock;
+import android.util.Log;
+import android.util.SparseArray;
 import com.google.android.exoplayer.C;
 import com.google.android.exoplayer.MediaFormat;
 import com.google.android.exoplayer.MediaFormatHolder;
@@ -31,10 +35,6 @@ import com.google.android.exoplayer.upstream.Loader;
 import com.google.android.exoplayer.upstream.Loader.Loadable;
 import com.google.android.exoplayer.util.Assertions;
 import com.google.android.exoplayer.util.Util;
-
-import android.net.Uri;
-import android.os.SystemClock;
-import android.util.SparseArray;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -366,6 +366,9 @@ public final class ExtractorSampleSource implements SampleSource, SampleSourceRe
   public int readData(int track, long playbackPositionUs, MediaFormatHolder formatHolder,
       SampleHolder sampleHolder) {
     downstreamPositionUs = playbackPositionUs;
+    if(loadable != null) {
+        loadable.positionUs = downstreamPositionUs;
+    }
 
     if (pendingDiscontinuities[track] || isPendingReset()) {
       return NOTHING_READ;
@@ -687,6 +690,7 @@ public final class ExtractorSampleSource implements SampleSource, SampleSourceRe
     private final PositionHolder positionHolder;
 
     private volatile boolean loadCanceled;
+    private volatile long positionUs;
 
     private boolean pendingExtractorSeek;
 
@@ -736,8 +740,9 @@ public final class ExtractorSampleSource implements SampleSource, SampleSourceRe
 
               // Limit loader from buffering data too often. Sleep when the threshold is reached
               // 1/10 of the time it outreaches it.
-              if ((positionHolder.readPosition - position) > this.requestedBufferTime) {
-                  Thread.sleep((positionHolder.readPosition - position - requestedBufferTime) / 10);
+              if ((positionHolder.readPosition - positionUs) > this.requestedBufferTime) {
+                  Log.d("ExtractorSampleSource", String.format("good_night: %d, %d", positionHolder.readPosition, positionUs));
+                  Thread.sleep((positionHolder.readPosition - positionUs - requestedBufferTime) / 10);
               }
           }
         } finally {
