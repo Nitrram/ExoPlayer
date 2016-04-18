@@ -306,16 +306,17 @@ public class MediaCodecVideoTrackRenderer extends MediaCodecTrackRenderer {
     if (this.surface == surface) {
       return;
     }
+      boolean switch_surface = this.surface != null;
     this.surface = surface;
     this.reportedDrawnToSurface = false;
     int state = getState();
     if (state == TrackRenderer.STATE_ENABLED || state == TrackRenderer.STATE_STARTED) {
-      releaseCodec();
+      releaseCodec(switch_surface);
       maybeInitCodec();
     }
   }
 
-  @Override
+    @Override
   protected boolean shouldInitCodec() {
     return super.shouldInitCodec() && surface != null && surface.isValid();
   }
